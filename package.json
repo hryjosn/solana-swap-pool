@@ -1,0 +1,21 @@
+{
+  "name": "solana-swap-pool",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:hryjosn/solana-swap-pool.git",
+  "author": "hryjosn <jo74705@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "ts-node main.ts"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.3.11",
+    "@solana/spl-token-swap": "^0.4.0",
+    "@solana/web3.js": "^1.89.1"
+  }
+}
