@@ -43,13 +43,15 @@ const createATAInstruction = async (
     owner,
     true // allow owner off curve
   );
+  console.log('tokenSwapInitSwapInstruction>',token.TOKEN_PROGRAM_ID)
 
   const tokenAccountInstruction: TransactionInstruction =
     await token.createAssociatedTokenAccountInstruction(
       payer, // payer
       tokenTAAddress, // ata
       owner, // owner
-      tokenAddress // mint
+      tokenAddress, // mint,
+      token.TOKEN_PROGRAM_ID
     );
 
   return [tokenTAAddress, tokenAccountInstruction];
@@ -110,16 +112,16 @@ const getTokenBalance = async (associatedTokenAccount: PublicKey) => {
 
 const loadKeys = (): [Keypair, Keypair, Keypair, PublicKey] => {
   const tokenSwapStateAccount = loadKeyPair(
-    "./TSBCG895nuhG4KnrTTqVf3z5bb9WjAfffTou5drcE3E.json"
+    "./TSZb8JoaZNaMajPHD27gpjUcuY5hKZSj9JJ76bP9nF1.json"
   );
   const wallet = loadKeyPair(
     "./Hyd91h5FeqBhNfBjEvxB5X3rNuixeGCeLdJqoMA1Kz1R.json"
   );
   const tokenAccountPool = loadKeyPair(
-    "./TPA5UAhnFQ2REeprk9gQ9GtLemmt7YnavTAWktgmb7h.json"
+    "./TPvhvw5oXkLMWN6z9rp4usipqR3djgpDM3eDgnayUXR.json"
   );
   const feeOwner = new PublicKey(
-    "HfoTxFR1Tm6kGmWgYWD6J7YHVy1UwqSULUGVLXkJqaKN"
+    "Hyd91h5FeqBhNfBjEvxB5X3rNuixeGCeLdJqoMA1Kz1R"
   );
 
   return [tokenSwapStateAccount, wallet, tokenAccountPool, feeOwner];
@@ -161,11 +163,11 @@ const createSwapAuthority = async (tokenA: string, tokenB: string) => {
       await createATAInstruction(wallet.publicKey, swapAuthority, TokenBMint);
     transaction.add(tokenBAccountInstruction);
 
-    // const tx1 = await sendAndConfirmTransaction(connection, transaction, [
-    //   wallet,
-    //   tokenSwapStateAccount,
-    // ]);
-    // console.log("tx1", tx1);
+    const tx1 = await sendAndConfirmTransaction(connection, transaction, [
+      wallet,
+      tokenSwapStateAccount,
+    ]);
+    console.log("tx1", tx1);
     console.log("tokenAATAAccountAddress", tokenAATAAccount.toBase58());
     console.log("tokenBATAAccountAddress", tokenBATAAccount.toBase58());
     console.log("swapAuthority", swapAuthority.toBase58());
@@ -216,7 +218,9 @@ const createPool = async (
 
   const [tokenFeeAccountAddress, tokenFeeAccountInstruction] =
     await createATAInstruction(wallet.publicKey, feeOwner, poolTokenMint);
-
+  console.log('tokenFeeAccountAddress>',tokenFeeAccountAddress.toBase58())
+  console.log('tokenSwapInitSwapInstruction>',token.TOKEN_PROGRAM_ID)
+  
   transaction.add(tokenFeeAccountInstruction);
 
   const tokenSwapInitSwapInstruction = TokenSwap.createInitSwapInstruction(
@@ -250,40 +254,92 @@ const createPool = async (
   console.log("tx2", tx2);
 };
 
-// const swapToken = async (swapAuthoritAddress: string) => {
-//   const [tokenSwapStateAccount] = loadKeys();
+const swapToken = async ( tokenAATAAccountAddress: string,
+  tokenBATAAccountAddress: string,swapAuthoritAddress: string) => {
+  const connection = await connect();
 
-//   const user = loadKeyPair(
-//     "./Keys/USRHWJVJE7K3y7qmEp3GziU9w3uke35eBXF7QZ4h5X3.json"
-//   );
+  let transaction = new Transaction();
 
-//   const swapAuthority = new PublicKey(swapAuthoritAddress);
+  const [tokenSwapStateAccount, wallet, tokenAccountPool, feeOwner] =
+  loadKeys();
+  const user = loadKeyPair(
+    "./Hyd91h5FeqBhNfBjEvxB5X3rNuixeGCeLdJqoMA1Kz1R.json"
+  );
 
-//   const swapInstruction = TokenSwap.swapInstruction(
-//     tokenSwapStateAccount.publicKey,
-//     swapAuthority,
-//     wallet.publicKey,
-//     userTokenA,
-//     poolTokenA,
-//     poolTokenB,
-//     userTokenB,
-//     poolMint,
-//     feeAccount,
-//     null,
-//     TOKEN_SWAP_PROGRAM_ID,
-//     TOKEN_PROGRAM_ID,
-//     amount * 10 ** MintInfoTokenA.decimals,
-//     0
-//   );
+  const tokenAATAAccount = new PublicKey(tokenAATAAccountAddress);
+  const tokenBATAAccount = new PublicKey(tokenBATAAccountAddress);
+  const TokenAMint = new PublicKey('ATwd6FkqFpp2HUeLTK6SpNVzhZCTn7er5LAevKvkgDNi');
+  const TokenBMint = new PublicKey('BTWb3YyHn8hwi5t5J3rwepVUz7uhXtr51E3DVYcgcShh');
+  const swapAuthority = new PublicKey(swapAuthoritAddress);
+  const poolTokenMint = new PublicKey('BWJLmvZqs5rCMdohTBJBdyJx7juyBDwBPPotg8kfTiPP');
+  const SWAP_AMOUNT_IN = 100000;
+  const alice = loadKeyPair('./ALirEpopQb1Hu9f7x22AsBF7qUegEbDY6emACxVqf1we.json')
+  const aliceTokenAATA = new PublicKey('AVrKmocMpTUekuSMJKYUVUE5XpZQvmozyZDpstF2XTWY')
+  const aliceTokenBATA = new PublicKey('2aNC37mMibFMe5c9VToiE2KaS9DuMbVZ7eJ5vTLYrSJC')
+  
+  const MintInfoTokenADecimals = 9
+  console.log('feeOwner>',feeOwner.toBase58())
+  const feeAccount = new PublicKey('CgkT3Bn2HsSgj3QCmop9Z5QUgx7oebdKcj1QVvqXJtya')
+  const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+  const swapInstruction = TokenSwap.swapInstruction(
+    tokenSwapStateAccount.publicKey,
+    swapAuthority,
+    alice.publicKey,
+    aliceTokenAATA,
+    tokenAATAAccount,
+    tokenBATAAccount,
+    aliceTokenBATA,
+    poolTokenMint!,
+    feeAccount,
+    null,
+    TokenAMint,
+    TokenBMint,
+    TOKEN_SWAP_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    BigInt(SWAP_AMOUNT_IN * 10 ** MintInfoTokenADecimals),
+    0n,
+  );
+  // amount * 10 ** MintInfoTokenA.decimals,
+    // console.log('swapInstruction>',swapInstruction)
+  // tokenSwap: PublicKey,
+  //   authority: PublicKey,
+  //   userTransferAuthority: PublicKey,
+  //   userSource: PublicKey,
+  //   poolSource: PublicKey,
+  //   poolDestination: PublicKey,
+  //   userDestination: PublicKey,
+  //   poolMint: PublicKey,
+  //   feeAccount: PublicKey,
+  //   hostFeeAccount: PublicKey | null,
+  //   sourceMint: PublicKey, *
+  //   destinationMint: PublicKey, *
+  //   swapProgramId: PublicKey,
+  //   sourceTokenProgramId: PublicKey,
+  //   destinationTokenProgramId: PublicKey,
+  //   poolTokenProgramId: PublicKey,
+  //   amountIn: bigint,
+  //   minimumAmountOut: bigint,
 
-//   transaction.add(swapInstruction);
-// };
+
+  transaction.add(swapInstruction);
+  const tx2 = await sendAndConfirmTransaction(connection, transaction, [
+    wallet,
+    alice,
+    // tokenAccountPool,
+    tokenSwapStateAccount
+  ]);
+  console.log("tx2", tx2);
+};
 
 const main = () => {
-  createSwapAuthority(
-    "ATwd6FkqFpp2HUeLTK6SpNVzhZCTn7er5LAevKvkgDNi",
-    "BTWb3YyHn8hwi5t5J3rwepVUz7uhXtr51E3DVYcgcShh"
-  );
+  // createSwapAuthority(
+  //   "ATwd6FkqFpp2HUeLTK6SpNVzhZCTn7er5LAevKvkgDNi",
+  //   "BTWb3YyHn8hwi5t5J3rwepVUz7uhXtr51E3DVYcgcShh"
+  // );
+  // createPool('A7RkfotXPCdkwCqsckd9HpjT9qMRSCRWHjrEmhHfxBqT','9iLALCznL5nVFzDQVC2Ej4SnuDwgGaLk8gycPWbh36no','8NCH2TyToHD9hWSqBKD796aDPsAjc4sU2CyagFGkj8ei')
+  swapToken('A7RkfotXPCdkwCqsckd9HpjT9qMRSCRWHjrEmhHfxBqT','9iLALCznL5nVFzDQVC2Ej4SnuDwgGaLk8gycPWbh36no','8NCH2TyToHD9hWSqBKD796aDPsAjc4sU2CyagFGkj8ei')
 };
 
 main();
