@@ -224,7 +224,7 @@ const createPool = async (
   transaction.add(tokenFeeAccountInstruction);
 
   const tokenSwapInitSwapInstruction = TokenSwap.createInitSwapInstruction(
-    tokenSwapStateAccount, // Token swap state account
+    new PublicKey('TSZb8JoaZNaMajPHD27gpjUcuY5hKZSj9JJ76bP9nF1'), // Token swap state account
     swapAuthority, // Swap pool authority
     tokenAATAAccount, // Token A token account
     tokenBATAAccount, // Token B token account
@@ -259,28 +259,18 @@ const swapToken = async ( tokenAATAAccountAddress: string,
   const connection = await connect();
 
   let transaction = new Transaction();
-
-  const [tokenSwapStateAccount, wallet, tokenAccountPool, feeOwner] =
-  loadKeys();
-  const user = loadKeyPair(
-    "./Hyd91h5FeqBhNfBjEvxB5X3rNuixeGCeLdJqoMA1Kz1R.json"
-  );
-
+  const [tokenSwapStateAccount] = loadKeys();
   const tokenAATAAccount = new PublicKey(tokenAATAAccountAddress);
   const tokenBATAAccount = new PublicKey(tokenBATAAccountAddress);
-  const TokenAMint = new PublicKey('ATwd6FkqFpp2HUeLTK6SpNVzhZCTn7er5LAevKvkgDNi');
-  const TokenBMint = new PublicKey('BTWb3YyHn8hwi5t5J3rwepVUz7uhXtr51E3DVYcgcShh');
   const swapAuthority = new PublicKey(swapAuthoritAddress);
   const poolTokenMint = new PublicKey('BWJLmvZqs5rCMdohTBJBdyJx7juyBDwBPPotg8kfTiPP');
-  const SWAP_AMOUNT_IN = 100000;
   const alice = loadKeyPair('./ALirEpopQb1Hu9f7x22AsBF7qUegEbDY6emACxVqf1we.json')
   const aliceTokenAATA = new PublicKey('AVrKmocMpTUekuSMJKYUVUE5XpZQvmozyZDpstF2XTWY')
   const aliceTokenBATA = new PublicKey('2aNC37mMibFMe5c9VToiE2KaS9DuMbVZ7eJ5vTLYrSJC')
   
-  const MintInfoTokenADecimals = 9
-  console.log('feeOwner>',feeOwner.toBase58())
+  
   const feeAccount = new PublicKey('CgkT3Bn2HsSgj3QCmop9Z5QUgx7oebdKcj1QVvqXJtya')
-  const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+  
   const swapInstruction = TokenSwap.swapInstruction(
     tokenSwapStateAccount.publicKey,
     swapAuthority,
@@ -292,46 +282,21 @@ const swapToken = async ( tokenAATAAccountAddress: string,
     poolTokenMint!,
     feeAccount,
     null,
-    TokenAMint,
-    TokenBMint,
     TOKEN_SWAP_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    BigInt(SWAP_AMOUNT_IN * 10 ** MintInfoTokenADecimals),
-    0n,
+    token.TOKEN_PROGRAM_ID,
+    10,
+    0
   );
-  // amount * 10 ** MintInfoTokenA.decimals,
-    // console.log('swapInstruction>',swapInstruction)
-  // tokenSwap: PublicKey,
-  //   authority: PublicKey,
-  //   userTransferAuthority: PublicKey,
-  //   userSource: PublicKey,
-  //   poolSource: PublicKey,
-  //   poolDestination: PublicKey,
-  //   userDestination: PublicKey,
-  //   poolMint: PublicKey,
-  //   feeAccount: PublicKey,
-  //   hostFeeAccount: PublicKey | null,
-  //   sourceMint: PublicKey, *
-  //   destinationMint: PublicKey, *
-  //   swapProgramId: PublicKey,
-  //   sourceTokenProgramId: PublicKey,
-  //   destinationTokenProgramId: PublicKey,
-  //   poolTokenProgramId: PublicKey,
-  //   amountIn: bigint,
-  //   minimumAmountOut: bigint,
+  
+  
 
 
   transaction.add(swapInstruction);
   const tx2 = await sendAndConfirmTransaction(connection, transaction, [
-    wallet,
     alice,
-    // tokenAccountPool,
-    tokenSwapStateAccount
   ]);
   console.log("tx2", tx2);
-};
+}
 
 const main = () => {
   // createSwapAuthority(
